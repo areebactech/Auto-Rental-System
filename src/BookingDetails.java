@@ -6,79 +6,60 @@ public class BookingDetails extends JFrame {
         setTitle("Finalize Your Booking");
         setSize(600, 400);
         setLocationRelativeTo(null);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        getContentPane().setBackground(Color.BLACK);
         setLayout(null);
 
-        // Set black background
-        getContentPane().setBackground(Color.BLACK);
+        addLabel("Booking for: " + name + " (" + vehicle + ")", 30, 30, 500, 30);
+        addLabel("Start Date (dd-mm-yyyy):", 30, 90, 250, 30);
+        JTextField dateField = addTextField(290, 90, 250, 35);
 
-        // Booking info
-        JLabel infoLabel = new JLabel("Booking for: " + name + " (" + vehicle + ")");
-        infoLabel.setBounds(30, 30, 500, 30);
-        infoLabel.setForeground(Color.WHITE);
-        add(infoLabel);
+        addLabel("Duration (days):", 30, 150, 250, 30);
+        JTextField durationField = addTextField(290, 150, 250, 35);
 
-        // Start Date
-        JLabel dateLabel = new JLabel("Start Date (dd-mm-yyyy):");
-        dateLabel.setBounds(30, 90, 250, 30);
-        dateLabel.setForeground(Color.WHITE);
-        add(dateLabel);
-
-        JTextField dateField = new JTextField();
-        dateField.setBounds(290, 90, 250, 35);
-        dateField.setForeground(Color.black);
-        add(dateField);
-
-        // Duration
-        JLabel durationLabel = new JLabel("Duration (days):");
-        durationLabel.setBounds(30, 150, 250, 30);
-        durationLabel.setForeground(Color.WHITE);
-        add(durationLabel);
-
-        JTextField durationField = new JTextField();
-        durationField.setBounds(290, 150, 250, 35);
-        durationField.setBackground(Color.WHITE);
-
-        add(durationField);
-
-        // Confirm Button
         JButton confirmBtn = new JButton("Confirm Booking");
         confirmBtn.setBounds(200, 230, 200, 40);
         confirmBtn.setBackground(new Color(80, 130, 180));
         confirmBtn.setForeground(Color.WHITE);
         add(confirmBtn);
 
-        // Confirm Button Action
         confirmBtn.addActionListener(e -> {
             String date = dateField.getText();
-            String durationText = durationField.getText();
+            String daysStr = durationField.getText();
 
-            if (date.isEmpty() || durationText.isEmpty()) {
+            if (date.isEmpty() || daysStr.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Please fill all fields.");
-            } else {
-                int days = Integer.parseInt(durationText);
-                int rentPerDay;
-
-                // Determine rent based on vehicle type
-                if (vehicle.equalsIgnoreCase("Car")) {
-                    rentPerDay = 1000;
-                } else if (vehicle.equalsIgnoreCase("Bike")) {
-                    rentPerDay = 500;
-                } else if (vehicle.equalsIgnoreCase("Truck")) {
-                    rentPerDay = 1500;
-                } else {
-                    rentPerDay = 1000;
-                }
-
-                int rent = days * rentPerDay;
-
-                // Show custom confirmation window
-                new ConfirmationMsg(this, name, vehicle, date, days, rent).setVisible(true);
-
-                dispose(); // Close this booking details window
+                return;
             }
+
+            int days = Integer.parseInt(daysStr);
+            int rentPerDay = switch (vehicle.toLowerCase()) {
+                case "car" -> 1000;
+                case "bike" -> 500;
+                case "truck" -> 1500;
+                default -> 1000;
+            };
+
+            int rent = days * rentPerDay;
+            new ConfirmationMsg(this, name, vehicle, date, days, rent).setVisible(true);
+            dispose();
         });
 
         setVisible(true);
     }
+
+    private void addLabel(String text, int x, int y, int w, int h) {
+        JLabel label = new JLabel(text);
+        label.setBounds(x, y, w, h);
+        label.setForeground(Color.WHITE);
+        add(label);
+    }
+
+    private JTextField addTextField(int x, int y, int w, int h) {
+        JTextField field = new JTextField();
+        field.setBounds(x, y, w, h);
+        add(field);
+        return field;
+    }
 }
+

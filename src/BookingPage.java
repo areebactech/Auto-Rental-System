@@ -1,81 +1,71 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 public class BookingPage extends JFrame {
 
     public BookingPage() {
-        // Set up frame
         setTitle("Vehicle Rental Booking");
         setSize(1000, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setBackground(Color.black);
+        setBackground(Color.BLACK);
 
-
-        // Load background image
-        ImageIcon backgroundIcon = new ImageIcon("src/background.png");
-        JLabel background = new JLabel(backgroundIcon);
+        // Background
+        JLabel background = new JLabel(new ImageIcon("src/background.png"));
         background.setLayout(null);
         setContentPane(background);
 
+        // Shared font
+        Font labelFont = new Font("Arial", Font.PLAIN, 16);
+
         // Title
-        JLabel titleLabel = new JLabel("Book Your Vehicle");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 30));
-        titleLabel.setForeground(Color.WHITE);
-        titleLabel.setBounds(600, 100, 400, 40);
-        background.add(titleLabel);
+        background.add(createLabel("Book Your Vehicle", new Font("Arial", Font.BOLD, 30), 600, 100, 400, 40));
 
         // Name
-        JLabel nameLabel = new JLabel("Your Name:");
-        nameLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-        nameLabel.setForeground(Color.WHITE);
-        nameLabel.setBounds(550, 170, 120, 30);
-        background.add(nameLabel);
-
-        JTextField nameField = new JTextField();
-        nameField.setFont(new Font("Arial", Font.PLAIN, 16));
-        nameField.setBounds(680, 170, 220, 30);
+        background.add(createLabel("Your Name:", labelFont, 550, 170, 120, 30));
+        JTextField nameField = createTextField(labelFont, 680, 170, 220, 30);
         background.add(nameField);
 
-        // Vehicle selection
-        JLabel vehicleLabel = new JLabel("Select Vehicle:");
-        vehicleLabel.setFont(new Font("Arial", Font.PLAIN, 16));
-        vehicleLabel.setForeground(Color.WHITE);
-        vehicleLabel.setBounds(550, 220, 120, 30);
-        background.add(vehicleLabel);
-
-        String[] vehicles = {"Car", "Bike", "Truck"};
-        JComboBox<String> vehicleCombo = new JComboBox<>(vehicles);
-        vehicleCombo.setFont(new Font("Arial", Font.PLAIN, 16));
+        // Vehicle
+        background.add(createLabel("Select Vehicle:", labelFont, 550, 220, 120, 30));
+        JComboBox<String> vehicleCombo = new JComboBox<>(new String[]{"Car", "Bike", "Truck"});
+        vehicleCombo.setFont(labelFont);
         vehicleCombo.setBounds(680, 220, 220, 30);
         background.add(vehicleCombo);
 
-        // Book Now Button
+        // Book button
         JButton bookButton = new JButton("Book Now");
         bookButton.setFont(new Font("Arial", Font.BOLD, 16));
         bookButton.setBackground(new Color(70, 130, 180));
         bookButton.setForeground(Color.WHITE);
         bookButton.setBounds(680, 280, 120, 35);
-        background.add(bookButton);
-
-
-        // Button click behavior
-        bookButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String name = nameField.getText().trim();
-                String vehicle = (String) vehicleCombo.getSelectedItem();
-
-                if (name.isEmpty()) {
-                    JOptionPane.showMessageDialog(BookingPage.this, "Please enter your name.", "Input Error", JOptionPane.ERROR_MESSAGE);
-                } else {
-                    // Open next page
-                    new BookingDetails(name, vehicle);
-                }
+        bookButton.addActionListener(e -> {
+            String name = nameField.getText().trim();
+            String vehicle = (String) vehicleCombo.getSelectedItem();
+            if (name.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Please enter your name.", "Input Error", JOptionPane.ERROR_MESSAGE);
+            } else {
+                new BookingDetails(name, vehicle);
             }
         });
+        background.add(bookButton);
 
         setVisible(true);
     }
+
+    private JLabel createLabel(String text, Font font, int x, int y, int w, int h) {
+        JLabel label = new JLabel(text);
+        label.setFont(font);
+        label.setForeground(Color.WHITE);
+        label.setBounds(x, y, w, h);
+        return label;
+    }
+
+    private JTextField createTextField(Font font, int x, int y, int w, int h) {
+        JTextField field = new JTextField();
+        field.setFont(font);
+        field.setBounds(x, y, w, h);
+        return field;
+    }
 }
+
