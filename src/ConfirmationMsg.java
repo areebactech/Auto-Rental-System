@@ -24,14 +24,17 @@ public class ConfirmationMsg extends JDialog {
         };
 
         int y = 70;
-        for (String text : texts)
-            addLabel(text, textFont, Color.WHITE, 50, y += 0, 350, 25, y += 30);
+        for (String text : texts) {
+            addLabel(text, textFont, Color.WHITE, 50, y, 350, 25);
+            y += 30; // increment y for next label
+        }
 
         JButton ok = new JButton("OK");
         ok.setFont(textFont);
         ok.setBounds(170, 220, 100, 35);
         ok.setBackground(new Color(70, 130, 180));
         ok.setForeground(Color.WHITE);
+        ok.setFocusPainted(false);
         ok.addActionListener(e -> dispose());
         add(ok);
     }
@@ -43,8 +46,5 @@ public class ConfirmationMsg extends JDialog {
         label.setBounds(x, y, w, h);
         add(label);
     }
-
-    private void addLabel(String text, Font font, Color color, int x, int y, int w, int h, int nextY) {
-        addLabel(text, font, color, x, y, w, h);
-    }
 }
+
