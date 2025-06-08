@@ -15,7 +15,7 @@ public class BookingPage extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setUndecorated(true);
 
-        JLabel background = new JLabel(new ImageIcon("src/book.png"));
+        JLabel background = new JLabel(new ImageIcon("src/images/book.png"));
         background.setLayout(null);
         setContentPane(background);
 

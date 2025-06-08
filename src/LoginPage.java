@@ -12,7 +12,7 @@ public class LoginPage extends JFrame {
         setLayout(null);
         setResizable(false);
 
-        JLabel background = new JLabel(new ImageIcon("src/background.png"));
+        JLabel background = new JLabel(new ImageIcon("src/images/background.png"));
         background.setLayout(null);
         setContentPane(background);
 
@@ -41,7 +41,6 @@ public class LoginPage extends JFrame {
         add(userBtn);
 
         adminBtn.addActionListener(e -> {
-            dispose();
             new AdminLoginPage();
         });
 
