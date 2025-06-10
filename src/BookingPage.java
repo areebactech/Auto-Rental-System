@@ -1,8 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 
@@ -32,7 +30,7 @@ public class BookingPage extends JFrame {
         JTextField phoneField = addField(formPanel, "Phone No:", labelFont, fieldFont, 370, 60);
         JTextField cnicField = addField(formPanel, "CNIC:", labelFont, fieldFont, 30, 120);
         JTextField addressField = addField(formPanel, "Address:", labelFont, fieldFont, 370, 120);
-        JTextField dateField = addField(formPanel, "Book Date(yyyy-MM-dd):", labelFont, fieldFont, 30, 180);
+        JTextField dateField = addField(formPanel, "Date(yyyy-MM-dd):", labelFont, fieldFont, 30, 180);
         JTextField durationField = addField(formPanel, "Duration (days):", labelFont, fieldFont, 370, 180);
 
         // Vehicle options
@@ -114,7 +112,7 @@ public class BookingPage extends JFrame {
 
             LocalDate bookingDate;
             try {
-                bookingDate = LocalDate.parse(dateStr); // yyyy-MM-dd format expected
+                bookingDate = LocalDate.parse(dateStr);
             } catch (DateTimeParseException ex) {
                 JOptionPane.showMessageDialog(this, "Enter booking date in yyyy-MM-dd format.", "Invalid Date", JOptionPane.ERROR_MESSAGE);
                 return;
@@ -131,12 +129,35 @@ public class BookingPage extends JFrame {
 
             int total = rentPerDay * days;
 
-            // Save booking to DB
+            // Save user and booking to DB
             try (Connection conn = DBConnection.getConnection()) {
-                String sql = """
+                conn.setAutoCommit(false); // Start transaction
+
+                // 1. Insert user if doesn't exist
+                String checkUserSql = "SELECT COUNT(*) FROM Users WHERE cnic = ?";
+                try (PreparedStatement checkStmt = conn.prepareStatement(checkUserSql)) {
+                    checkStmt.setString(1, cnic);
+                    ResultSet rs = checkStmt.executeQuery();
+                    rs.next();
+                    int count = rs.getInt(1);
+
+                    if (count == 0) {
+                        String insertUserSql = "INSERT INTO Users (name, phone, cnic, address) VALUES (?, ?, ?, ?)";
+                        try (PreparedStatement insertUserStmt = conn.prepareStatement(insertUserSql)) {
+                            insertUserStmt.setString(1, name);
+                            insertUserStmt.setString(2, phone);
+                            insertUserStmt.setString(3, cnic);
+                            insertUserStmt.setString(4, address);
+                            insertUserStmt.executeUpdate();
+                        }
+                    }
+                }
+
+                // 2. Insert booking
+                String insertBookingSql = """
                         INSERT INTO Bookings (customer_name, phone_number, cnic, address, booking_date, rental_item, rental_duration_days, total_price)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)""";
-                try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                try (PreparedStatement pstmt = conn.prepareStatement(insertBookingSql)) {
                     pstmt.setString(1, name);
                     pstmt.setString(2, phone);
                     pstmt.setString(3, cnic);
@@ -148,6 +169,7 @@ public class BookingPage extends JFrame {
 
                     int rows = pstmt.executeUpdate();
                     if (rows > 0) {
+                        conn.commit(); // All good
 
                         new ConfirmationMsg(this, name, vehicle, dateStr, days, total).setVisible(true);
                         nameField.setText("");
@@ -158,6 +180,7 @@ public class BookingPage extends JFrame {
                         durationField.setText("");
                         vehicleGroup.clearSelection();
                     } else {
+                        conn.rollback();
                         JOptionPane.showMessageDialog(this, "Booking failed!", "Error", JOptionPane.ERROR_MESSAGE);
                     }
                 }
@@ -207,6 +230,7 @@ public class BookingPage extends JFrame {
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
     }
 }
+
 
 
 
