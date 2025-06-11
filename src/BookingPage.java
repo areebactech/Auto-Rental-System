@@ -8,19 +8,40 @@ public class BookingPage extends JFrame {
 
     public BookingPage() {
         setTitle("Vehicle Rental Booking");
-        setSize(1366, 768);
-        setLocationRelativeTo(null);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setUndecorated(true);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(1300, 950);
+        setLocationRelativeTo(null); // center window
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setLayout(new BorderLayout());
 
-        JLabel background = new JLabel(new ImageIcon("src/images/book.png"));
-        background.setLayout(null);
-        setContentPane(background);
+        JLayeredPane layeredPane = new JLayeredPane();
+        layeredPane.setLayout(null);
+        add(layeredPane, BorderLayout.CENTER);
+
+        JLabel background = new JLabel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                ImageIcon bg = new ImageIcon("src/images/book.png");
+                g.drawImage(bg.getImage(), 0, 0, getWidth(), getHeight(), this);
+            }
+        };
+        background.setBounds(0, 0, getWidth(), getHeight());
+        layeredPane.add(background, Integer.valueOf(0));
+
+        // Update background bounds on resize
+        addComponentListener(new java.awt.event.ComponentAdapter() {
+            public void componentResized(java.awt.event.ComponentEvent e) {
+                background.setSize(getWidth(), getHeight());
+            }
+        });
+
 
         JPanel formPanel = new JPanel(null);
         formPanel.setBackground(new Color(0, 0, 0, 130));
-        formPanel.setBounds(330, 200, 700, 500);
-        background.add(formPanel);
+        formPanel.setBounds(330, 220, 700, 500);
+        layeredPane.add(formPanel, Integer.valueOf(1));
+
 
         Font labelFont = new Font("Segoe UI", Font.BOLD, 14);
         Font fieldFont = new Font("Segoe UI", Font.PLAIN, 14);
@@ -62,10 +83,10 @@ public class BookingPage extends JFrame {
         formPanel.add(bookBtn);
 
         // Logout Button
-        JButton logoutBtn = new JButton("Logout");
+        JButton logoutBtn = new JButton("Exit");
         styleButton(logoutBtn);
-        logoutBtn.setBounds(1230, 710, 100, 35);
-        background.add(logoutBtn);
+        logoutBtn.setBounds(250, 390, 200, 45); // directly below Confirm Booking
+        formPanel.add(logoutBtn);
 
         logoutBtn.addActionListener(e -> {
             dispose();
@@ -131,7 +152,7 @@ public class BookingPage extends JFrame {
 
             // Save user and booking to DB
             try (Connection conn = DBConnection.getConnection()) {
-                conn.setAutoCommit(false); // Start transaction
+                conn.setAutoCommit(false);
 
                 // 1. Insert user if doesn't exist
                 String checkUserSql = "SELECT COUNT(*) FROM Users WHERE cnic = ?";
@@ -169,7 +190,7 @@ public class BookingPage extends JFrame {
 
                     int rows = pstmt.executeUpdate();
                     if (rows > 0) {
-                        conn.commit(); // All good
+                        conn.commit();
 
                         new ConfirmationMsg(this, name, vehicle, dateStr, days, total).setVisible(true);
                         nameField.setText("");

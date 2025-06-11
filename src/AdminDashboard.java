@@ -46,7 +46,6 @@ public class AdminDashboard extends JFrame {
         updateSidebarButtons();
         layeredPane.add(sidebar, Integer.valueOf(1));
 
-        // Sidebar & background resizing
         addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent e) {
                 sidebar.setBounds(0, 0, isSidebarExpanded ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH, getHeight());
@@ -133,7 +132,7 @@ public class AdminDashboard extends JFrame {
         switch (option) {
             case "Dashboard" -> refreshDashboard();
             case "View Bookings" -> new ViewBookings(this);
-            case "Add Vehicle" -> JOptionPane.showMessageDialog(this, "Add Vehicle clicked.");
+            case "Add Vehicle" -> new AddVehicle();
             case "Users" -> new UserList(this);
             case "Logout" -> {
                 dispose();
@@ -165,23 +164,19 @@ public class AdminDashboard extends JFrame {
         int[] values = new int[5];
 
         try (Connection conn = DBConnection.getConnection(); Statement stmt = conn.createStatement()) {
-            // Total Bookings
+
             ResultSet rs1 = stmt.executeQuery("SELECT COUNT(*) FROM Bookings");
             if (rs1.next()) values[0] = rs1.getInt(1);
 
-            // Pending Approvals
             ResultSet rs2 = stmt.executeQuery("SELECT COUNT(*) FROM Bookings WHERE status = 'Pending'");
             if (rs2.next()) values[1] = rs2.getInt(1);
 
-            // Active Vehicles
-            ResultSet rs3 = stmt.executeQuery("SELECT COUNT(*) FROM Vehicles WHERE status = 'Active'");
+            ResultSet rs3 = stmt.executeQuery("SELECT COUNT(*) FROM Vehicles WHERE status = 'Available'");
             if (rs3.next()) values[2] = rs3.getInt(1);
 
-            // Registered Users
             ResultSet rs4 = stmt.executeQuery("SELECT COUNT(*) FROM Users");
             if (rs4.next()) values[3] = rs4.getInt(1);
 
-            // Revenue Today (only today's bookings)
             ResultSet rs5 = stmt.executeQuery("SELECT ISNULL(SUM(total_price), 0) FROM Bookings WHERE CAST(booking_date AS DATE) = CAST(GETDATE() AS DATE)");
             if (rs5.next()) values[4] = rs5.getInt(1);
 
