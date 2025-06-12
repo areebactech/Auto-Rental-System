@@ -6,28 +6,34 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class AdminDashboard extends JFrame {
-    private JLayeredPane layeredPane;
-    private JPanel sidebar;
-    private boolean isSidebarExpanded = true;
     private final int SIDEBAR_EXPANDED_WIDTH = 180;
     private final int SIDEBAR_COLLAPSED_WIDTH = 60;
 
     private final String[] navOptions = {"Dashboard", "View Bookings", "Add Vehicle", "Users", "Logout"};
+    private final String[] iconPaths = {
+            "src/images/adb.png", "src/images/bkg.png",
+            "src/images/adv.png", "src/images/usr.png", "src/images/lgt.png"
+    };
+
+    private JLayeredPane layeredPane;
+    private JPanel sidebar;
+    private boolean isSidebarExpanded = true;
 
     private JButton refreshBtn;
+    private ViewBookings viewBookingsWindow;
+    private AddVehicle addVehicleWindow;
+    private UserList userListWindow;
 
     public AdminDashboard() {
         setTitle("Admin Dashboard");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setExtendedState(JFrame.MAXIMIZED_BOTH);
-        setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
         layeredPane = new JLayeredPane();
         layeredPane.setLayout(null);
         add(layeredPane, BorderLayout.CENTER);
 
-        // Background
         JLabel background = new JLabel() {
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
@@ -46,15 +52,6 @@ public class AdminDashboard extends JFrame {
         updateSidebarButtons();
         layeredPane.add(sidebar, Integer.valueOf(1));
 
-        addComponentListener(new ComponentAdapter() {
-            public void componentResized(ComponentEvent e) {
-                sidebar.setBounds(0, 0, isSidebarExpanded ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH, getHeight());
-                background.setSize(getWidth(), getHeight());
-                refreshBtn.setBounds(getWidth() - 60, 20, 40, 40);
-            }
-        });
-
-        // Refresh button with image icon
         ImageIcon refreshIcon = new ImageIcon("src/images/refresh.png");
         Image scaledRefresh = refreshIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
         refreshBtn = new JButton(new ImageIcon(scaledRefresh));
@@ -65,10 +62,18 @@ public class AdminDashboard extends JFrame {
         refreshBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         refreshBtn.setBounds(getWidth() - 60, 20, 40, 40);
         refreshBtn.addActionListener(e -> {
-            dispose();
+            dispose(); // ❗ Optional: Could call a refresh method instead of full dispose
             new AdminDashboard();
         });
         layeredPane.add(refreshBtn, Integer.valueOf(3));
+
+        addComponentListener(new ComponentAdapter() {
+            public void componentResized(ComponentEvent e) {
+                sidebar.setBounds(0, 0, isSidebarExpanded ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH, getHeight());
+                background.setSize(getWidth(), getHeight());
+                refreshBtn.setBounds(getWidth() - 60, 20, 40, 40);
+            }
+        });
 
         refreshDashboard();
         setVisible(true);
@@ -78,18 +83,7 @@ public class AdminDashboard extends JFrame {
         sidebar.removeAll();
         sidebar.add(Box.createVerticalStrut(10));
 
-        // Toggle button
-        ImageIcon icon = new ImageIcon("src/images/dd.png");
-        Image scaled = icon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
-        JButton toggle = new JButton(new ImageIcon(scaled));
-
-        toggle.setAlignmentX(Component.CENTER_ALIGNMENT);
-        toggle.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        toggle.setFocusPainted(false);
-        toggle.setForeground(Color.DARK_GRAY);
-        toggle.setBackground(new Color(45, 100, 180)); // Darker blue
-        toggle.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1, true));
-        toggle.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        JButton toggle = createSidebarButton("src/images/dd.png", "", 35);
         toggle.addActionListener(e -> {
             isSidebarExpanded = !isSidebarExpanded;
             sidebar.setBounds(0, 0, isSidebarExpanded ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH, getHeight());
@@ -98,27 +92,9 @@ public class AdminDashboard extends JFrame {
         sidebar.add(toggle);
         sidebar.add(Box.createVerticalStrut(20));
 
-        for (String option : navOptions) {
-            JButton btn = new JButton(isSidebarExpanded ? option : option.substring(0, 1));
-            btn.setAlignmentX(Component.CENTER_ALIGNMENT);
-            btn.setMaximumSize(new Dimension(160, 40));
-            btn.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-            btn.setForeground(Color.DARK_GRAY);
-            btn.setBackground(new Color(173, 216, 230));
-            btn.setFocusPainted(false);
-            btn.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true));
-            btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
-            btn.addMouseListener(new MouseAdapter() {
-                public void mouseEntered(MouseEvent e) {
-                    btn.setBackground(new Color(135, 206, 250));
-                }
-
-                public void mouseExited(MouseEvent e) {
-                    btn.setBackground(new Color(173, 216, 230));
-                }
-            });
-
+        for (int i = 0; i < navOptions.length; i++) {
+            JButton btn = createSidebarButton(iconPaths[i], navOptions[i], 30);
+            String option = navOptions[i];
             btn.addActionListener(e -> handleNavClick(option));
             sidebar.add(Box.createVerticalStrut(10));
             sidebar.add(btn);
@@ -128,17 +104,58 @@ public class AdminDashboard extends JFrame {
         sidebar.repaint();
     }
 
+    private JButton createSidebarButton(String iconPath, String text, int iconSize) {
+        ImageIcon rawIcon = new ImageIcon(iconPath);
+        ImageIcon scaledIcon = new ImageIcon(rawIcon.getImage().getScaledInstance(iconSize, iconSize, Image.SCALE_SMOOTH));
+
+        JButton btn = new JButton(isSidebarExpanded ? text : "");
+        btn.setIcon(scaledIcon);
+        btn.setAlignmentX(Component.CENTER_ALIGNMENT);
+        btn.setMaximumSize(new Dimension(160, 40));
+        btn.setFont(new Font("Segoe UI", Font.PLAIN, 15));
+        btn.setForeground(Color.DARK_GRAY);
+        btn.setBackground(new Color(173, 216, 230));
+        btn.setFocusPainted(false);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true));
+        btn.setHorizontalAlignment(isSidebarExpanded ? SwingConstants.LEFT : SwingConstants.CENTER);
+        btn.setIconTextGap(isSidebarExpanded ? 10 : 0);
+
+        btn.addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(new Color(135, 206, 250));
+            }
+
+            public void mouseExited(MouseEvent e) {
+                btn.setBackground(new Color(173, 216, 230));
+            }
+        });
+
+        return btn;
+    }
+
     private void handleNavClick(String option) {
+        closeAllWindows();
         switch (option) {
             case "Dashboard" -> refreshDashboard();
-            case "View Bookings" -> new ViewBookings(this);
-            case "Add Vehicle" -> new AddVehicle();
-            case "Users" -> new UserList(this);
+            case "View Bookings" -> viewBookingsWindow = new ViewBookings(this);
+            case "Add Vehicle" -> addVehicleWindow = new AddVehicle();
+            case "Users" -> userListWindow = new UserList(this);
             case "Logout" -> {
                 dispose();
                 new LoginPage();
             }
         }
+    }
+
+    private void closeAllWindows() {
+        if (viewBookingsWindow != null) viewBookingsWindow.dispose();
+        if (addVehicleWindow != null) addVehicleWindow.dispose();
+        if (userListWindow != null) userListWindow.dispose();
+
+        viewBookingsWindow = null;
+        addVehicleWindow = null;
+        userListWindow = null;
     }
 
     private void refreshDashboard() {
@@ -160,11 +177,10 @@ public class AdminDashboard extends JFrame {
         datetime.setForeground(Color.LIGHT_GRAY);
         layeredPane.add(datetime, Integer.valueOf(2));
 
-        String[] cardTitles = {"Total Bookings", "Pending Approvals", "Active Vehicles", "Registered Users", "Revenue Today"};
+        String[] titles = {"Total Bookings", "Pending Approvals", "Active Vehicles", "Registered Users", "Revenue Today"};
         int[] values = new int[5];
 
         try (Connection conn = DBConnection.getConnection(); Statement stmt = conn.createStatement()) {
-
             ResultSet rs1 = stmt.executeQuery("SELECT COUNT(*) FROM Bookings");
             if (rs1.next()) values[0] = rs1.getInt(1);
 
@@ -179,13 +195,11 @@ public class AdminDashboard extends JFrame {
 
             ResultSet rs5 = stmt.executeQuery("SELECT ISNULL(SUM(total_price), 0) FROM Bookings WHERE CAST(booking_date AS DATE) = CAST(GETDATE() AS DATE)");
             if (rs5.next()) values[4] = rs5.getInt(1);
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-
-        for (int i = 0; i < cardTitles.length; i++) {
+        for (int i = 0; i < titles.length; i++) {
             JPanel card = new JPanel() {
                 protected void paintComponent(Graphics g) {
                     Graphics2D g2 = (Graphics2D) g.create();
@@ -204,7 +218,7 @@ public class AdminDashboard extends JFrame {
                     BorderFactory.createEmptyBorder(10, 10, 10, 10)
             ));
 
-            JLabel title = new JLabel(cardTitles[i], SwingConstants.CENTER);
+            JLabel title = new JLabel(titles[i], SwingConstants.CENTER);
             title.setForeground(Color.WHITE);
             title.setFont(new Font("Arial", Font.BOLD, 14));
 
@@ -221,6 +235,7 @@ public class AdminDashboard extends JFrame {
         layeredPane.revalidate();
     }
 }
+
 
 
 
