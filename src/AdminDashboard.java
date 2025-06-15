@@ -1,146 +1,197 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.sql.*;
+import java.net.URL;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class AdminDashboard extends JFrame {
-    private final int SIDEBAR_EXPANDED_WIDTH = 180;
-    private final int SIDEBAR_COLLAPSED_WIDTH = 60;
-
-    private final String[] navOptions = {"Dashboard", "View Bookings", "Add Vehicle", "Users", "Logout"};
+    private final int EXPANDED_WIDTH = 180, COLLAPSED_WIDTH = 60;
+    private final String[] navItems = {"Dashboard", "View Bookings", "Add Vehicle", "Users", "Logout"};
     private final String[] iconPaths = {
-            "src/images/adb.png", "src/images/bkg.png",
-            "src/images/adv.png", "src/images/usr.png", "src/images/lgt.png"
+            "/images/adb.png", "/images/bkg.png", "/images/adv.png",
+            "/images/usr.png", "/images/lgt.png"
     };
 
     private JLayeredPane layeredPane;
     private JPanel sidebar;
-    private boolean isSidebarExpanded = true;
-
+    private boolean isExpanded = true;
     private JButton refreshBtn;
-    private ViewBookings viewBookingsWindow;
-    private AddVehicle addVehicleWindow;
-    private UserList userListWindow;
+    private ViewBookings viewBookings;
+    private AddVehicle addVehicle;
+    private UserList userList;
 
     public AdminDashboard() {
         setTitle("Admin Dashboard");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        setExtendedState(MAXIMIZED_BOTH);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
         layeredPane = new JLayeredPane();
         layeredPane.setLayout(null);
         add(layeredPane, BorderLayout.CENTER);
 
+        setupBackground();
+        setupSidebar();
+        setupRefreshButton();
+        refreshDashboard();
+        setVisible(true);
+    }
+
+    private void setupBackground() {
         JLabel background = new JLabel() {
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                ImageIcon bg = new ImageIcon("src/images/WM.png");
-                g.drawImage(bg.getImage(), 0, 0, getWidth(), getHeight(), this);
+                try {
+                    ImageIcon bg = loadImageResource("/images/WM.png");
+                    if (bg != null) {
+                        g.drawImage(bg.getImage(), 0, 0, getWidth(), getHeight(), this);
+                    }
+                } catch (Exception e) {
+                    g.setColor(new Color(45, 45, 45));
+                    g.fillRect(0, 0, getWidth(), getHeight());
+                }
             }
         };
         background.setBounds(0, 0, getWidth(), getHeight());
         layeredPane.add(background, Integer.valueOf(0));
 
-        sidebar = new JPanel();
-        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-        sidebar.setBackground(new Color(173, 216, 230, 220));
-        sidebar.setBounds(0, 0, SIDEBAR_EXPANDED_WIDTH, getHeight());
-        sidebar.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 5));
-        updateSidebarButtons();
-        layeredPane.add(sidebar, Integer.valueOf(1));
-
-        ImageIcon refreshIcon = new ImageIcon("src/images/refresh.png");
-        Image scaledRefresh = refreshIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
-        refreshBtn = new JButton(new ImageIcon(scaledRefresh));
-        refreshBtn.setToolTipText("Refresh Dashboard");
-        refreshBtn.setContentAreaFilled(false);
-        refreshBtn.setBorderPainted(false);
-        refreshBtn.setFocusPainted(false);
-        refreshBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        refreshBtn.setBounds(getWidth() - 60, 20, 40, 40);
-        refreshBtn.addActionListener(e -> {
-            dispose(); // ❗ Optional: Could call a refresh method instead of full dispose
-            new AdminDashboard();
-        });
-        layeredPane.add(refreshBtn, Integer.valueOf(3));
-
         addComponentListener(new ComponentAdapter() {
             public void componentResized(ComponentEvent e) {
-                sidebar.setBounds(0, 0, isSidebarExpanded ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH, getHeight());
+                sidebar.setBounds(0, 0, isExpanded ? EXPANDED_WIDTH : COLLAPSED_WIDTH, getHeight());
                 background.setSize(getWidth(), getHeight());
                 refreshBtn.setBounds(getWidth() - 60, 20, 40, 40);
             }
         });
+    }
 
-        refreshDashboard();
-        setVisible(true);
+    private ImageIcon loadImageResource(String path) {
+        try {
+            URL imageUrl = getClass().getResource(path);
+            return imageUrl != null ? new ImageIcon(imageUrl) : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void setupSidebar() {
+        sidebar = new JPanel();
+        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
+        sidebar.setBackground(new Color(173, 216, 230, 220));
+        sidebar.setBounds(0, 0, EXPANDED_WIDTH, getHeight());
+        sidebar.setBorder(BorderFactory.createEmptyBorder(10, 5, 10, 5));
+        layeredPane.add(sidebar, Integer.valueOf(1));
+        updateSidebarButtons();
     }
 
     private void updateSidebarButtons() {
         sidebar.removeAll();
         sidebar.add(Box.createVerticalStrut(10));
 
-        JButton toggle = createSidebarButton("src/images/dd.png", "", 35);
-        toggle.addActionListener(e -> {
-            isSidebarExpanded = !isSidebarExpanded;
-            sidebar.setBounds(0, 0, isSidebarExpanded ? SIDEBAR_EXPANDED_WIDTH : SIDEBAR_COLLAPSED_WIDTH, getHeight());
-            updateSidebarButtons();
-        });
+        JButton toggle = new JButton();
+        ImageIcon toggleIcon = loadImageResource("/images/dd.png");
+        if (toggleIcon != null) {
+            toggle.setIcon(new ImageIcon(toggleIcon.getImage().getScaledInstance(35, 35, Image.SCALE_SMOOTH)));
+        } else {
+            toggle.setText("☰");
+        }
+        toggle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        toggle.setBackground(new Color(45, 100, 180));
+        toggle.setBorder(BorderFactory.createLineBorder(Color.WHITE, 1, true));
+        toggle.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        toggle.setFocusPainted(false);
+        toggle.addActionListener(e -> animateSidebar());
         sidebar.add(toggle);
         sidebar.add(Box.createVerticalStrut(20));
 
-        for (int i = 0; i < navOptions.length; i++) {
-            JButton btn = createSidebarButton(iconPaths[i], navOptions[i], 30);
-            String option = navOptions[i];
-            btn.addActionListener(e -> handleNavClick(option));
+        for (int i = 0; i < navItems.length; i++) {
+            JButton btn = createNavButton(navItems[i], iconPaths[i]);
             sidebar.add(Box.createVerticalStrut(10));
             sidebar.add(btn);
         }
-
         sidebar.revalidate();
         sidebar.repaint();
     }
 
-    private JButton createSidebarButton(String iconPath, String text, int iconSize) {
-        ImageIcon rawIcon = new ImageIcon(iconPath);
-        ImageIcon scaledIcon = new ImageIcon(rawIcon.getImage().getScaledInstance(iconSize, iconSize, Image.SCALE_SMOOTH));
+    private JButton createNavButton(String text, String iconPath) {
+        ImageIcon icon = loadImageResource(iconPath);
+        JButton btn = new JButton(isExpanded ? text : "");
+        if (icon != null) {
+            btn.setIcon(new ImageIcon(icon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH)));
+        }
 
-        JButton btn = new JButton(isSidebarExpanded ? text : "");
-        btn.setIcon(scaledIcon);
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
         btn.setMaximumSize(new Dimension(160, 40));
         btn.setFont(new Font("Segoe UI", Font.PLAIN, 15));
         btn.setForeground(Color.DARK_GRAY);
         btn.setBackground(new Color(173, 216, 230));
         btn.setFocusPainted(false);
-        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true));
-        btn.setHorizontalAlignment(isSidebarExpanded ? SwingConstants.LEFT : SwingConstants.CENTER);
-        btn.setIconTextGap(isSidebarExpanded ? 10 : 0);
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setHorizontalAlignment(isExpanded ? SwingConstants.LEFT : SwingConstants.CENTER);
+        btn.setIconTextGap(isExpanded ? 10 : 0);
 
         btn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                btn.setBackground(new Color(135, 206, 250));
-            }
-
-            public void mouseExited(MouseEvent e) {
-                btn.setBackground(new Color(173, 216, 230));
-            }
+            public void mouseEntered(MouseEvent e) { btn.setBackground(new Color(135, 206, 250)); }
+            public void mouseExited(MouseEvent e) { btn.setBackground(new Color(173, 216, 230)); }
         });
 
+        btn.addActionListener(e -> handleNavigation(text));
         return btn;
     }
 
-    private void handleNavClick(String option) {
+    private void animateSidebar() {
+        int start = sidebar.getWidth();
+        int end = isExpanded ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+        int step = (end - start) / 10;
+        Timer timer = new Timer(15, null);
+
+        timer.addActionListener(new ActionListener() {
+            int current = start;
+            public void actionPerformed(ActionEvent e) {
+                current += step;
+                if ((step > 0 && current >= end) || (step < 0 && current <= end)) {
+                    current = end;
+                    timer.stop();
+                    isExpanded = !isExpanded;
+                    updateSidebarButtons();
+                }
+                sidebar.setBounds(0, 0, current, getHeight());
+            }
+        });
+        timer.start();
+    }
+
+    private void setupRefreshButton() {
+        refreshBtn = new JButton();
+        ImageIcon refreshIcon = loadImageResource("/images/refresh.png");
+        if (refreshIcon != null) {
+            refreshBtn.setIcon(new ImageIcon(refreshIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH)));
+        } else {
+            refreshBtn.setText("⟳");
+        }
+        refreshBtn.setToolTipText("Refresh Dashboard");
+        refreshBtn.setContentAreaFilled(false);
+        refreshBtn.setBorderPainted(false);
+        refreshBtn.setFocusPainted(false);
+        refreshBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        refreshBtn.setBounds(getWidth() - 60, 20, 40, 40);
+        refreshBtn.addActionListener(e -> refreshDashboard());
+        layeredPane.add(refreshBtn, Integer.valueOf(3));
+    }
+
+    private void handleNavigation(String option) {
         closeAllWindows();
         switch (option) {
             case "Dashboard" -> refreshDashboard();
-            case "View Bookings" -> viewBookingsWindow = new ViewBookings(this);
-            case "Add Vehicle" -> addVehicleWindow = new AddVehicle();
-            case "Users" -> userListWindow = new UserList(this);
+            case "View Bookings" -> viewBookings = new ViewBookings(this);
+            case "Add Vehicle" -> addVehicle = new AddVehicle();
+            case "Users" -> userList = new UserList(this);
             case "Logout" -> {
                 dispose();
                 new LoginPage();
@@ -149,20 +200,14 @@ public class AdminDashboard extends JFrame {
     }
 
     private void closeAllWindows() {
-        if (viewBookingsWindow != null) viewBookingsWindow.dispose();
-        if (addVehicleWindow != null) addVehicleWindow.dispose();
-        if (userListWindow != null) userListWindow.dispose();
-
-        viewBookingsWindow = null;
-        addVehicleWindow = null;
-        userListWindow = null;
+        if (viewBookings != null) { viewBookings.dispose(); viewBookings = null; }
+        if (addVehicle != null) { addVehicle.dispose(); addVehicle = null; }
+        if (userList != null) { userList.dispose(); userList = null; }
     }
 
     private void refreshDashboard() {
         for (Component comp : layeredPane.getComponentsInLayer(2)) {
-            if (comp instanceof JPanel || comp instanceof JLabel) {
-                layeredPane.remove(comp);
-            }
+            if (comp instanceof JPanel || comp instanceof JLabel) layeredPane.remove(comp);
         }
 
         JLabel welcome = new JLabel("Welcome, Admin!");
@@ -178,26 +223,7 @@ public class AdminDashboard extends JFrame {
         layeredPane.add(datetime, Integer.valueOf(2));
 
         String[] titles = {"Total Bookings", "Pending Approvals", "Active Vehicles", "Registered Users", "Revenue Today"};
-        int[] values = new int[5];
-
-        try (Connection conn = DBConnection.getConnection(); Statement stmt = conn.createStatement()) {
-            ResultSet rs1 = stmt.executeQuery("SELECT COUNT(*) FROM Bookings");
-            if (rs1.next()) values[0] = rs1.getInt(1);
-
-            ResultSet rs2 = stmt.executeQuery("SELECT COUNT(*) FROM Bookings WHERE status = 'Pending'");
-            if (rs2.next()) values[1] = rs2.getInt(1);
-
-            ResultSet rs3 = stmt.executeQuery("SELECT COUNT(*) FROM Vehicles WHERE status = 'Available'");
-            if (rs3.next()) values[2] = rs3.getInt(1);
-
-            ResultSet rs4 = stmt.executeQuery("SELECT COUNT(*) FROM Users");
-            if (rs4.next()) values[3] = rs4.getInt(1);
-
-            ResultSet rs5 = stmt.executeQuery("SELECT ISNULL(SUM(total_price), 0) FROM Bookings WHERE CAST(booking_date AS DATE) = CAST(GETDATE() AS DATE)");
-            if (rs5.next()) values[4] = rs5.getInt(1);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        int[] values = fetchDashboardData();
 
         for (int i = 0; i < titles.length; i++) {
             JPanel card = new JPanel() {
@@ -215,8 +241,7 @@ public class AdminDashboard extends JFrame {
             card.setOpaque(false);
             card.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createLineBorder(Color.WHITE, 1, true),
-                    BorderFactory.createEmptyBorder(10, 10, 10, 10)
-            ));
+                    BorderFactory.createEmptyBorder(10, 10, 10, 10)));
 
             JLabel title = new JLabel(titles[i], SwingConstants.CENTER);
             title.setForeground(Color.WHITE);
@@ -230,11 +255,42 @@ public class AdminDashboard extends JFrame {
             card.add(count, BorderLayout.CENTER);
             layeredPane.add(card, Integer.valueOf(2));
         }
-
         layeredPane.repaint();
         layeredPane.revalidate();
     }
+
+    private int[] fetchDashboardData() {
+        int[] data = new int[5];
+        String query = """
+            SELECT 
+                (SELECT COUNT(*) FROM Bookings) as total_bookings,
+                (SELECT COUNT(*) FROM Bookings WHERE status = 'Pending') as pending_approvals,
+                (SELECT COUNT(*) FROM Vehicles WHERE status = 'Available') as active_vehicles,
+                (SELECT COUNT(*) FROM Users) as registered_users,
+                (SELECT ISNULL(SUM(total_price), 0) FROM Bookings 
+                 WHERE CAST(booking_date AS DATE) = CAST(GETDATE() AS DATE)) as revenue_today
+            """;
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+
+            if (rs.next()) {
+                data[0] = rs.getInt("total_bookings");
+                data[1] = rs.getInt("pending_approvals");
+                data[2] = rs.getInt("active_vehicles");
+                data[3] = rs.getInt("registered_users");
+                data[4] = rs.getInt("revenue_today");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return data;
+    }
 }
+
+
+
 
 
 
