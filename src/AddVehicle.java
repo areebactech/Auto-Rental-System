@@ -7,7 +7,11 @@ import java.sql.SQLException;
 
 public class AddVehicle extends JFrame {
 
-    public AddVehicle() {
+    private AdminDashboard dashboardRef;
+
+    public AddVehicle(AdminDashboard dashboard) {
+        this.dashboardRef = dashboard;
+
         setTitle("Add New Vehicle");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setSize(800, 600);
@@ -90,6 +94,10 @@ public class AddVehicle extends JFrame {
                         nameField.setText("");
                         rentField.setText("");
                         statusBox.setSelectedIndex(0);
+
+                        if (dashboardRef != null) {
+                            dashboardRef.refreshDashboard(); // ✅ REFRESH here
+                        }
                     } else {
                         JOptionPane.showMessageDialog(this, "Failed to add vehicle.", "Error", JOptionPane.ERROR_MESSAGE);
                     }

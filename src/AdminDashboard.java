@@ -145,6 +145,13 @@ public class AdminDashboard extends JFrame {
         return btn;
     }
 
+    public void refreshUserListIfOpen() {
+        if (userList != null) {
+            userList.loadUsers();  // or whatever method refreshes your JTable
+        }
+    }
+
+
     private void animateSidebar() {
         int start = sidebar.getWidth();
         int end = isExpanded ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
@@ -190,7 +197,7 @@ public class AdminDashboard extends JFrame {
         switch (option) {
             case "Dashboard" -> refreshDashboard();
             case "View Bookings" -> viewBookings = new ViewBookings(this);
-            case "Add Vehicle" -> addVehicle = new AddVehicle();
+            case "Add Vehicle" -> addVehicle = new AddVehicle(this);
             case "Users" -> userList = new UserList(this);
             case "Logout" -> {
                 dispose();
@@ -205,7 +212,7 @@ public class AdminDashboard extends JFrame {
         if (userList != null) { userList.dispose(); userList = null; }
     }
 
-    private void refreshDashboard() {
+    public void refreshDashboard() {
         for (Component comp : layeredPane.getComponentsInLayer(2)) {
             if (comp instanceof JPanel || comp instanceof JLabel) layeredPane.remove(comp);
         }

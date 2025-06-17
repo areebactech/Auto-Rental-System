@@ -7,6 +7,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class UserList extends JFrame {
+    private DefaultTableModel model;
+
     public UserList(JFrame parentFrame) {
         setTitle("Registered Users");
         setSize(600, 400);
@@ -15,9 +17,20 @@ public class UserList extends JFrame {
         setLayout(new BorderLayout());
 
         String[] columnNames = {"User ID", "Name", "Phone", "CNIC", "Address"};
-        DefaultTableModel model = new DefaultTableModel(columnNames, 0);
+        model = new DefaultTableModel(columnNames, 0); // Move model to class-level
         JTable table = new JTable(model);
         table.setFillsViewportHeight(true);
+
+        JScrollPane scrollPane = new JScrollPane(table);
+        add(scrollPane, BorderLayout.CENTER);
+
+        loadUsers(); // ← CALL HERE
+
+        setVisible(true);
+    }
+
+    public void loadUsers() {
+        model.setRowCount(0); // Clear previous rows
 
         try (Connection conn = DBConnection.getConnection();
              Statement stmt = conn.createStatement();
@@ -39,11 +52,8 @@ public class UserList extends JFrame {
             JOptionPane.showMessageDialog(this, "Error loading users: " + e.getMessage(),
                     "Database Error", JOptionPane.ERROR_MESSAGE);
         }
-
-        JScrollPane scrollPane = new JScrollPane(table);
-        add(scrollPane, BorderLayout.CENTER);
-        setVisible(true);
     }
 }
+
 
 

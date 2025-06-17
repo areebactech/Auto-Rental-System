@@ -5,281 +5,237 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 
 public class BookingPage extends JFrame {
-    private JTextField nameField, phoneField, cnicField, addressField, dateField, durationField;
-    private JRadioButton[] radioButtons;
-    private ButtonGroup vehicleGroup;
+
+    private JTextField nameField, phoneField, cnicField,
+            addressField, dateField, durationField;
+    private int selectedVehiclePrice = 0;
+    private String  selectedVehicle = null;
+    private JTextField selectedVehicleLabel;
 
     public BookingPage() {
-        setupWindow();
-        createUI();
+        setTitle("Vehicle Rental Booking");
+        setExtendedState(MAXIMIZED_BOTH);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        buildUI();
         setVisible(true);
     }
 
-    private void setupWindow() {
-        setTitle("Vehicle Rental Booking");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1300, 950);
-        setLocationRelativeTo(null);
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
-        setLayout(new BorderLayout());
-    }
+    //UI
+    private void buildUI() {
+        JLayeredPane layer = new JLayeredPane();
+        layer.setLayout(null);
+        add(layer, BorderLayout.CENTER);
 
-    private void createUI() {
-        JLayeredPane layeredPane = new JLayeredPane();
-        layeredPane.setLayout(null);
-        add(layeredPane, BorderLayout.CENTER);
-
-        // Background
-        JLabel background = new JLabel() {
-            @Override
+        /* background image */
+        JLabel bg = new JLabel() {
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                try {
-                    ImageIcon bg = new ImageIcon(getClass().getResource("/images/book.png"));
-                    g.drawImage(bg.getImage(), 0, 0, getWidth(), getHeight(), this);
-                } catch (Exception e) {
-                    setBackground(new Color(30, 30, 50));
-                    setOpaque(true);
-                }
+                try{
+                    ImageIcon img=new ImageIcon(getClass().getResource("/images/book.png"));
+                    g.drawImage(img.getImage(),0,0,getWidth(),getHeight(),this);
+                }catch(Exception ex){ g.setColor(Color.DARK_GRAY); g.fillRect(0,0,getWidth(),getHeight()); }
             }
         };
-        background.setBounds(0, 0, getWidth(), getHeight());
-        layeredPane.add(background, Integer.valueOf(0));
+        bg.setBounds(0,0,getWidth(),getHeight());
+        layer.add(bg,Integer.valueOf(0));
+        addComponentListener(new java.awt.event.ComponentAdapter(){
+            public void componentResized(java.awt.event.ComponentEvent e){ bg.setSize(getSize()); }
+        });
 
-        addComponentListener(new java.awt.event.ComponentAdapter() {
-            public void componentResized(java.awt.event.ComponentEvent e) {
-                background.setSize(getWidth(), getHeight());
+        /* form panel  */
+        JPanel form=new JPanel(null);
+        form.setBounds(330,220,700,500);
+        form.setBackground(new Color(0,0,0,130));
+        layer.add(form,Integer.valueOf(1));
+
+        createFormFields(form);
+        createVehicleSelector(form);
+        createButtons(form);
+    }
+
+    /* create input fields */
+    private void createFormFields(JPanel p){
+        Font lbl = new Font("Segoe UI", Font.BOLD, 14),
+                fld = new Font("Segoe UI", Font.PLAIN, 14);
+
+        nameField     = addField(p,"Full Name:",        lbl,fld,40 ,50);
+        phoneField    = addField(p,"Phone No:",         lbl,fld,380,50);
+        cnicField     = addField(p,"CNIC:",             lbl,fld,40 ,130);
+        addressField  = addField(p,"Address:",          lbl,fld,380,130);
+        dateField     = addField(p,"Date (yyyy-MM-dd):",lbl,fld,40 ,190);
+        durationField = addField(p,"Duration (days):",  lbl,fld,380,190);
+    }
+
+    /* vehicle selector block */
+    private void createVehicleSelector(JPanel p) {
+        JLabel l = new JLabel("Vehicle:");
+        l.setBounds(40, 250, 160, 25);
+        l.setForeground(Color.WHITE);
+        l.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        p.add(l);
+
+        selectedVehicleLabel = new JTextField("None selected");
+        selectedVehicleLabel.setBounds(200, 250, 220, 25);
+        selectedVehicleLabel.setEditable(false);
+        selectedVehicleLabel.setBackground(Color.BLACK);
+        selectedVehicleLabel.setForeground(new Color(0, 200, 255));
+        selectedVehicleLabel.setBorder(BorderFactory.createEmptyBorder());
+        selectedVehicleLabel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        p.add(selectedVehicleLabel);
+
+
+        JButton choose = new JButton("Select Vehicle");
+        choose.setBounds(420, 245, 180, 35);
+        styleButton(choose);
+        choose.addActionListener(e -> new VehicleBrowser(this));
+        p.add(choose);
+    }
+
+    /* action buttons */
+    private void createButtons(JPanel p){
+        JButton confirm=new JButton("Confirm Booking");
+        styleButton(confirm); confirm.setBounds(250,330,200,45);
+        confirm.addActionListener(e->handleBooking());
+        p.add(confirm);
+
+        JButton exit=new JButton("Exit");
+        styleButton(exit); exit.setBounds(250,390,200,45);
+        exit.addActionListener(e->{ dispose(); new LoginPage(); });
+        p.add(exit);
+    }
+    private void insertUserIfNotExists(String name, String phone, String cnic, String address) {
+        try (Connection con = DBConnection.getConnection()) {
+            String checkQuery = "SELECT * FROM users WHERE cnic = ?";
+            PreparedStatement checkStmt = con.prepareStatement(checkQuery);
+            checkStmt.setString(1, cnic);
+            ResultSet rs = checkStmt.executeQuery();
+
+            if (!rs.next()) {
+                String insertQuery = "INSERT INTO users (name, phone, cnic, address) VALUES (?, ?, ?, ?)";
+                PreparedStatement insertStmt = con.prepareStatement(insertQuery);
+                insertStmt.setString(1, name);
+                insertStmt.setString(2, phone);
+                insertStmt.setString(3, cnic);
+                insertStmt.setString(4, address);
+                insertStmt.executeUpdate();
+                insertStmt.close();
             }
-        });
 
-        // Form Panel
-        JPanel formPanel = new JPanel(null);
-        formPanel.setBackground(new Color(0, 0, 0, 130));
-        formPanel.setBounds(330, 220, 700, 500);
-        layeredPane.add(formPanel, Integer.valueOf(1));
-
-        createFormFields(formPanel);
-        createVehicleOptions(formPanel);
-        createButtons(formPanel);
-    }
-
-    private void createFormFields(JPanel panel) {
-        Font labelFont = new Font("Segoe UI", Font.BOLD, 14);
-        Font fieldFont = new Font("Segoe UI", Font.PLAIN, 14);
-
-        nameField = addField(panel, "Full Name:", labelFont, fieldFont, 40, 50);
-        phoneField = addField(panel, "Phone No:", labelFont, fieldFont, 380, 50);
-        cnicField = addField(panel, "CNIC:", labelFont, fieldFont, 40, 130);
-        addressField = addField(panel, "Address:", labelFont, fieldFont, 380, 130);
-        dateField = addField(panel, "Date(yyyy-MM-dd):", labelFont, fieldFont, 40, 190);
-        durationField = addField(panel, "Duration (days):", labelFont, fieldFont, 380, 190);
-    }
-
-    private void createVehicleOptions(JPanel panel) {
-        JLabel vehicleLabel = new JLabel("Select Vehicle:");
-        vehicleLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        vehicleLabel.setForeground(Color.WHITE);
-        vehicleLabel.setBounds(30, 240, 120, 30);
-        panel.add(vehicleLabel);
-
-        String[] vehicles = {"Car", "Bike", "Truck", "Bus", "Cycle"};
-        vehicleGroup = new ButtonGroup();
-        radioButtons = new JRadioButton[vehicles.length];
-        int x = 160;
-
-        for (int i = 0; i < vehicles.length; i++) {
-            JRadioButton rb = new JRadioButton(vehicles[i]);
-            rb.setBounds(x, 240, 80, 30);
-            styleRadioButton(rb);
-            vehicleGroup.add(rb);
-            panel.add(rb);
-            radioButtons[i] = rb;
-            x += 90;
+            rs.close();
+            checkStmt.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            msg("User insert error: " + e.getMessage());
         }
     }
 
-    private void createButtons(JPanel panel) {
-        JButton bookBtn = new JButton("Confirm Booking");
-        styleButton(bookBtn);
-        bookBtn.setBounds(250, 330, 200, 45);
-        bookBtn.addActionListener(e -> handleBooking());
-        panel.add(bookBtn);
+    /* LOGIC */
+    private void handleBooking(){
+        String name=nameField.getText().trim(),
+                phone=phoneField.getText().trim(),
+                cnic =cnicField.getText().trim(),
+                addr =addressField.getText().trim(),
+                dateS=dateField.getText().trim(),
+                durS =durationField.getText().trim();
 
-        JButton logoutBtn = new JButton("Exit");
-        styleButton(logoutBtn);
-        logoutBtn.setBounds(250, 390, 200, 45);
-        logoutBtn.addActionListener(e -> {
-            dispose();
-            new LoginPage();
-        });
-        panel.add(logoutBtn);
-    }
-
-    private void handleBooking() {
-        // Get and validate input
-        String name = nameField.getText().trim();
-        String phone = phoneField.getText().trim();
-        String cnic = cnicField.getText().trim();
-        String address = addressField.getText().trim();
-        String dateStr = dateField.getText().trim();
-        String durationStr = durationField.getText().trim();
-
-        if (name.isEmpty() || phone.isEmpty() || cnic.isEmpty() || address.isEmpty() ||
-                dateStr.isEmpty() || durationStr.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Please fill all fields.", "Missing Info", JOptionPane.WARNING_MESSAGE);
-            return;
+        if(name.isEmpty()||phone.isEmpty()||cnic.isEmpty()||addr.isEmpty()
+                ||dateS.isEmpty()||durS.isEmpty()){
+            msg("Please fill all fields."); return;
+        }
+        if(selectedVehicle==null){
+            msg("Please select a vehicle first."); return;
         }
 
-        String vehicle = getSelectedVehicle();
-        if (vehicle == null) {
-            JOptionPane.showMessageDialog(this, "Please select a vehicle.", "Missing Info", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        // Validate duration and date
         int days;
-        try {
-            days = Integer.parseInt(durationStr);
-            if (days <= 0) throw new NumberFormatException();
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this, "Enter a valid duration in days.", "Invalid Input", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+        try{ days=Integer.parseInt(durS); if(days<=0)throw new NumberFormatException(); }
+        catch(NumberFormatException ex){ msg("Invalid duration."); return; }
 
-        LocalDate bookingDate;
-        try {
-            bookingDate = LocalDate.parse(dateStr);
-        } catch (DateTimeParseException ex) {
-            JOptionPane.showMessageDialog(this, "Enter booking date in yyyy-MM-dd format.", "Invalid Date", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+        LocalDate date;
+        try{ date=LocalDate.parse(dateS); }
+        catch(DateTimeParseException ex){ msg("Date format yyyy-MM-dd"); return; }
 
-        // Calculate price and save
-        int total = calculatePrice(vehicle, days);
-        saveToDatabase(name, phone, cnic, address, bookingDate, vehicle, days, total);
+        int total = selectedVehiclePrice * days;
+        insertUserIfNotExists(name, phone, cnic, addr);
+        saveToDatabase(name,phone,cnic,addr,date,selectedVehicle,days,total);
+
     }
 
-    private String getSelectedVehicle() {
-        for (JRadioButton rb : radioButtons) {
-            if (rb.isSelected()) return rb.getText();
-        }
-        return null;
-    }
+    /* ===================================== HELPERS ===================================== */
+    private JTextField addField(JPanel p,String txt,Font lf,Font ff,int x,int y){
+        JLabel lab=new JLabel(txt); lab.setFont(lf); lab.setForeground(Color.WHITE);
+        lab.setBounds(x,y,160,25); p.add(lab);
 
-    private int calculatePrice(String vehicle, int days) {
-        int rentPerDay = switch (vehicle.toLowerCase()) {
-            case "car" -> 1000;
-            case "bike" -> 500;
-            case "truck" -> 1500;
-            case "bus" -> 2000;
-            case "cycle" -> 200;
-            default -> 1000;
-        };
-        return rentPerDay * days;
+        JTextField f=new JTextField(); f.setFont(ff);
+        f.setBounds(x+160,y,180,30); f.setBackground(Color.BLACK);
+        f.setForeground(Color.WHITE); f.setCaretColor(Color.WHITE);
+        f.setBorder(BorderFactory.createMatteBorder(0,0,2,0,Color.WHITE));
+        p.add(f); return f;
+    }
+    private void styleButton(AbstractButton b){
+        b.setBackground(new Color(0,123,255));
+        b.setForeground(Color.WHITE);
+        b.setFocusPainted(false);
+        b.setFont(new Font("Segoe UI",Font.BOLD,15));
+        b.setBorder(BorderFactory.createEmptyBorder());
+        b.setCursor(new Cursor(Cursor.HAND_CURSOR));
+    }
+    private void msg(String s){ JOptionPane.showMessageDialog(this,s); }
+
+    /* --- called by VehicleBrowser when user clicks “Book Now” --- */
+    public void setSelectedVehicle(String v, int price) {
+        selectedVehicle = v;
+        selectedVehiclePrice = price;
+        selectedVehicleLabel.setText((v.length() > 20 ? v.substring(0, 20) + "..." : v));
+        selectedVehicleLabel.repaint();
+        System.out.println("DEBUG: Vehicle selected = " + v + " | Price: " + price);
     }
 
     private void saveToDatabase(String name, String phone, String cnic, String address,
                                 LocalDate date, String vehicle, int days, int total) {
-        try (Connection conn = DBConnection.getConnection()) {
-            conn.setAutoCommit(false);
+        try (Connection con = DBConnection.getConnection()) {
 
-            // Insert user if doesn't exist
-            String checkUserSql = "SELECT COUNT(*) FROM Users WHERE cnic = ?";
-            try (PreparedStatement checkStmt = conn.prepareStatement(checkUserSql)) {
-                checkStmt.setString(1, cnic);
-                ResultSet rs = checkStmt.executeQuery();
-                rs.next();
-                if (rs.getInt(1) == 0) {
-                    insertUser(conn, name, phone, cnic, address);
-                }
+            String query = """
+            INSERT INTO bookings (customer_name, phone_number, cnic, address,
+                                  booking_date, rental_item, rental_duration_days, total_price, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """;
+
+            PreparedStatement pst = con.prepareStatement(query);
+            pst.setString(1, name);
+            pst.setString(2, phone);
+            pst.setString(3, cnic);
+            pst.setString(4, address);
+            pst.setString(5, date.toString());
+            pst.setString(6, vehicle);
+            pst.setInt(7, days);
+            pst.setInt(8, total);
+            pst.setString(9, "Pending"); // You can change this default status
+
+            int inserted = pst.executeUpdate();
+            if (inserted > 0) {
+                // pop‑up confirmation dialog
+                new ConfirmationMsg(this, name, vehicle, date.toString(), days, total)
+                        .setVisible(true);
+            } else {
+                msg("Booking failed. Please try again.");
             }
 
-            // Insert booking
-            String bookingSql = """
-                    INSERT INTO Bookings (customer_name, phone_number, cnic, address, booking_date, rental_item, rental_duration_days, total_price)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""";
-            try (PreparedStatement pstmt = conn.prepareStatement(bookingSql)) {
-                pstmt.setString(1, name);
-                pstmt.setString(2, phone);
-                pstmt.setString(3, cnic);
-                pstmt.setString(4, address);
-                pstmt.setDate(5, java.sql.Date.valueOf(date));
-                pstmt.setString(6, vehicle);
-                pstmt.setInt(7, days);
-                pstmt.setBigDecimal(8, new java.math.BigDecimal(total));
+            pst.close();
 
-                if (pstmt.executeUpdate() > 0) {
-                    conn.commit();
-                    new ConfirmationMsg(this, name, vehicle, date.toString(), days, total).setVisible(true);
-                    clearForm();
-                } else {
-                    conn.rollback();
-                    JOptionPane.showMessageDialog(this, "Booking failed!", "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "Database Error:\n" + ex.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            e.printStackTrace();
+            msg("Database error: " + e.getMessage());
         }
     }
 
-    private void insertUser(Connection conn, String name, String phone, String cnic, String address) throws SQLException {
-        String sql = "INSERT INTO Users (name, phone, cnic, address) VALUES (?, ?, ?, ?)";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, name);
-            stmt.setString(2, phone);
-            stmt.setString(3, cnic);
-            stmt.setString(4, address);
-            stmt.executeUpdate();
-        }
-    }
-
-    private void clearForm() {
-        nameField.setText("");
-        phoneField.setText("");
-        cnicField.setText("");
-        addressField.setText("");
-        dateField.setText("");
-        durationField.setText("");
-        vehicleGroup.clearSelection();
-    }
-
-    private JTextField addField(JPanel panel, String labelText, Font labelFont, Font fieldFont, int x, int y) {
-        JLabel label = new JLabel(labelText);
-        label.setFont(labelFont);
-        label.setForeground(Color.WHITE);
-        label.setBounds(x, y, 160, 25);
-        panel.add(label);
-
-        JTextField field = new JTextField();
-        field.setFont(fieldFont);
-        field.setBounds(x + 160, y, 180, 30);
-        field.setBackground(Color.BLACK);
-        field.setForeground(Color.WHITE);
-        field.setCaretColor(Color.WHITE);
-        field.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, Color.WHITE));
-        panel.add(field);
-        return field;
-    }
-
-    private void styleRadioButton(JRadioButton rb) {
-        rb.setOpaque(true);
-        rb.setBackground(Color.BLACK);
-        rb.setForeground(Color.WHITE);
-        rb.setFocusPainted(false);
-        rb.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        rb.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.WHITE));
-        rb.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-    }
-
-    private void styleButton(JButton button) {
-        button.setBackground(new Color(0, 123, 255));
-        button.setForeground(Color.WHITE);
-        button.setFocusPainted(false);
-        button.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        button.setBorder(BorderFactory.createEmptyBorder());
-        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+    public static void main(String[] a){
+        SwingUtilities.invokeLater(BookingPage::new);
     }
 }
+
+
 
 
 
