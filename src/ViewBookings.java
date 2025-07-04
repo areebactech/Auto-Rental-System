@@ -84,6 +84,7 @@ public class ViewBookings extends JFrame {
         DefaultTableModel model = new DefaultTableModel(columns, 0);
         bookingsTable.setModel(model);
 
+        // Fixed: Using correct table name 'Bookings' and column name 'booking_id'
         String sql = "SELECT booking_id, customer_name, phone_number, cnic, address, booking_date, rental_item, rental_duration_days, total_price, status FROM Bookings";
 
         try (Connection conn = DBConnection.getConnection();
@@ -91,24 +92,23 @@ public class ViewBookings extends JFrame {
              ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
                 model.addRow(new Object[]{
-                        rs.getInt("booking_id"),
+                        rs.getInt("booking_id"),  // Correct column name
                         rs.getString("customer_name"),
                         rs.getString("phone_number"),
                         rs.getString("cnic"),
                         rs.getString("address"),
-                        rs.getDate("booking_date"),
+                        rs.getString("booking_date"),  // Fixed: Read as string, not date
                         rs.getString("rental_item"),
                         rs.getInt("rental_duration_days"),
-                        rs.getBigDecimal("total_price"),
+                        rs.getDouble("total_price"),  // Fixed: Use getDouble() for REAL type
                         rs.getString("status")
                 });
             }
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error loading bookings:\n" + e.getMessage());
+            e.printStackTrace();  // Added for debugging
         }
-    }
-
-    private void updateStatus(int bookingId, String status) {
+    }    private void updateStatus(int bookingId, String status) {
         String sql = "UPDATE Bookings SET status = ? WHERE booking_id = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {

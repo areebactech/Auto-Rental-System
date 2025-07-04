@@ -211,7 +211,7 @@ public class BookingPage extends JFrame {
             pst.setString(6, vehicle);
             pst.setInt(7, days);
             pst.setInt(8, total);
-            pst.setString(9, "Pending"); // You can change this default status
+            pst.setString(9, "Pending");
 
             int inserted = pst.executeUpdate();
             if (inserted > 0) {

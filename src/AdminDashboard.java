@@ -269,14 +269,14 @@ public class AdminDashboard extends JFrame {
     private int[] fetchDashboardData() {
         int[] data = new int[5];
         String query = """
-            SELECT 
-                (SELECT COUNT(*) FROM Bookings) as total_bookings,
-                (SELECT COUNT(*) FROM Bookings WHERE status = 'Pending') as pending_approvals,
-                (SELECT COUNT(*) FROM Vehicles WHERE status = 'Available') as active_vehicles,
-                (SELECT COUNT(*) FROM Users) as registered_users,
-                (SELECT ISNULL(SUM(total_price), 0) FROM Bookings 
-                 WHERE CAST(booking_date AS DATE) = CAST(GETDATE() AS DATE)) as revenue_today
-            """;
+        SELECT 
+            (SELECT COUNT(*) FROM bookings) as total_bookings,
+            (SELECT COUNT(*) FROM bookings WHERE status = 'Pending') as pending_approvals,
+            (SELECT COUNT(*) FROM vehicles WHERE status = 'Available') as active_vehicles,
+            (SELECT COUNT(*) FROM users) as registered_users,
+            (SELECT COALESCE(SUM(total_price), 0) FROM bookings 
+             WHERE DATE(booking_date) = DATE('now')) as revenue_today
+        """;
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query);
@@ -289,8 +289,18 @@ public class AdminDashboard extends JFrame {
                 data[3] = rs.getInt("registered_users");
                 data[4] = rs.getInt("revenue_today");
             }
+
+            // Debug output to verify data
+            System.out.println("Dashboard Data:");
+            System.out.println("Total Bookings: " + data[0]);
+            System.out.println("Pending Approvals: " + data[1]);
+            System.out.println("Active Vehicles: " + data[2]);
+            System.out.println("Registered Users: " + data[3]);
+            System.out.println("Revenue Today: " + data[4]);
+
         } catch (SQLException e) {
             e.printStackTrace();
+            System.err.println("Error fetching dashboard data: " + e.getMessage());
         }
         return data;
     }
