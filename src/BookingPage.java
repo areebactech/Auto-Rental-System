@@ -189,7 +189,6 @@ public class BookingPage extends JFrame {
         selectedVehiclePrice = price;
         selectedVehicleLabel.setText((v.length() > 20 ? v.substring(0, 20) + "..." : v));
         selectedVehicleLabel.repaint();
-        System.out.println("DEBUG: Vehicle selected = " + v + " | Price: " + price);
     }
 
     private void saveToDatabase(String name, String phone, String cnic, String address,

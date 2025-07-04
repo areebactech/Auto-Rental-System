@@ -290,14 +290,6 @@ public class AdminDashboard extends JFrame {
                 data[4] = rs.getInt("revenue_today");
             }
 
-            // Debug output to verify data
-            System.out.println("Dashboard Data:");
-            System.out.println("Total Bookings: " + data[0]);
-            System.out.println("Pending Approvals: " + data[1]);
-            System.out.println("Active Vehicles: " + data[2]);
-            System.out.println("Registered Users: " + data[3]);
-            System.out.println("Revenue Today: " + data[4]);
-
         } catch (SQLException e) {
             e.printStackTrace();
             System.err.println("Error fetching dashboard data: " + e.getMessage());
