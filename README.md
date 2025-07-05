@@ -31,8 +31,6 @@ This system was developed as an academic project to demonstrate the use of GUI p
 
 ## 🖼️ Screenshots
 
-> Replace with actual screenshots in your repo’s `/images` folder.
-
 ### 📝 Booking Interface
 
 ![Booking UI](screenshots/userpage.png)
