@@ -35,11 +35,15 @@ This system was developed as an academic project to demonstrate the use of GUI p
 
 ### 📝 Booking Interface
 
-![Booking UI](images/booking_ui.png)
+![Booking UI](screenshots/userpage.png)
 
 ### 📊 Admin Dashboard
 
-![Admin Dashboard](images/dashboard_ui.png)
+![Admin Dashboard](screenshots/admin.png)
+
+### Vehicle Selection
+
+![Vehicle Selection](screenshots/selectvehicle.png)
 
 ---
 
