@@ -33,7 +33,7 @@ This system was developed as an academic project to demonstrate the use of GUI p
 
 ### Dashboard Overview
 
-![Dashboard](https://github.com/user-attachments/assets/5d2617ce-742d-43d0-80ce-818c5e9112a1))
+![Dashboard](https://github.com/user-attachments/assets/5d2617ce-742d-43d0-80ce-818c5e9112a1)
 
 ### Vehicle Management
 
@@ -41,7 +41,7 @@ This system was developed as an academic project to demonstrate the use of GUI p
 
 ### Booking System
 
-![Booking System](---https://github.com/user-attachments/assets/708f8b42-e40e-41ba-8433-c6aa69eedc19)
+![Booking System](https://github.com/user-attachments/assets/708f8b42-e40e-41ba-8433-c6aa69eedc19)
 
 ## 🛠️ Tech Stack
 
