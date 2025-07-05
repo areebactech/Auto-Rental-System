@@ -29,21 +29,19 @@ This system was developed as an academic project to demonstrate the use of GUI p
 
 ---
 
-## 🖼️ Screenshots
+## Screenshots
 
-### 📝 Booking Interface
+### Dashboard Overview
 
-![Booking UI](screenshots/userpage.png)
+![Dashboard](https://github.com/user-attachments/assets/5d2617ce-742d-43d0-80ce-818c5e9112a1))
 
-### 📊 Admin Dashboard
+### Vehicle Management
 
-![Admin Dashboard](screenshots/admin.png)
+![Vehicle Management](https://github.com/user-attachments/assets/8fb2c0aa-7176-4199-8818-c6c37d980fff)
 
-### Vehicle Selection
+### Booking System
 
-![Vehicle Selection](screenshots/selectvehicle.png)
-
----
+![Booking System](---https://github.com/user-attachments/assets/708f8b42-e40e-41ba-8433-c6aa69eedc19)
 
 ## 🛠️ Tech Stack
 
